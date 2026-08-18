@@ -4,16 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cổng thông tin liên kết</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,500;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
     <style>
+        @keyframes rainbowBackground {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes rainbowText {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
+
         body {
-            /* Nền gradient rực rỡ, hiện đại hơn */
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fad0c4, #ffd1ff, #a1c4fd, #c2e9fb, #d4fc79, #96e6a1);
+            background-size: 400% 400%;
+            animation: rainbowBackground 15s ease infinite;
             color: #fff;
             min-height: 100vh;
             display: flex;
@@ -21,135 +37,535 @@
             align-items: center;
             padding: 20px;
         }
+
+        /* Màn hình chờ đếm ngược */
+        .lockout-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(15px);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            text-align: center;
+            padding: 20px;
+        }
+        .lockout-screen.active {
+            display: flex;
+        }
+        .lockout-box {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(20px);
+            padding: 40px 30px;
+            border-radius: 24px;
+            max-width: 360px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        .lockout-box h2 {
+            font-size: 20px;
+            font-weight: 800;
+            color: #ff3b30;
+            margin-bottom: 15px;
+        }
+        .lockout-box p {
+            font-size: 14px;
+            font-weight: 700;
+            color: #e0e0e0;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        .countdown-timer {
+            font-size: 36px;
+            font-weight: 900;
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 16px;
+            letter-spacing: 2px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        /* Hộp thoại thông báo tùy chỉnh */
+        .custom-alert-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .custom-alert-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .custom-alert-box {
+            background: rgba(255, 255, 255, 0.25);
+            border: 1.5px solid rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(20px);
+            padding: 25px 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 280px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        .custom-alert-overlay.active .custom-alert-box {
+            transform: translateY(0);
+        }
+        .custom-alert-box h4 {
+            margin-bottom: 10px;
+            font-size: 18px;
+            font-weight: 800;
+            color: #ff3b30;
+        }
+        .custom-alert-box p {
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #2c2c2c;
+        }
+        .custom-alert-box button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            background: #2c2c2c;
+            color: #ffffff;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 14px;
+            transition: opacity 0.2s;
+        }
+        .custom-alert-box button:hover {
+            opacity: 0.85;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-box {
+            background: rgba(255, 255, 255, 0.25);
+            border: 1.5px solid rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(20px);
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal-box {
+            transform: translateY(0);
+        }
+        .modal-box h3 {
+            margin-bottom: 15px;
+            font-size: 19px;
+            font-weight: 800;
+            color: #2c2c2c;
+            letter-spacing: 0.5px;
+        }
+        .modal-box input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1.5px solid rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.3);
+            color: #1a1a1a;
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            outline: none;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        .modal-box input::placeholder {
+            color: rgba(40, 40, 40, 0.6);
+            font-weight: 600;
+            letter-spacing: 0px;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .modal-buttons button {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            transition: opacity 0.2s;
+        }
+        .btn-submit {
+            background: #2c2c2c;
+            color: #ffffff;
+        }
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.4);
+            color: #2c2c2c;
+        }
+
         .container {
             width: 100%;
             max-width: 480px;
-            background: rgba(255, 255, 255, 0.1);
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.22);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border-radius: 24px;
-            padding: 35px 24px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 25px 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            border: 1.5px solid rgba(255, 255, 255, 0.45);
+            overflow: hidden;
         }
-        h1 {
-            text-align: center;
-            margin-bottom: 25px;
-            font-size: 26px;
-            font-weight: 700;
+        
+        .header-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+            gap: 12px;
+        }
+
+        .unlock-icon-btn {
+            background: rgba(255, 255, 255, 0.35);
+            border: 1.5px solid rgba(255, 255, 255, 0.6);
+            color: #1a1a1a;
+            padding: 8px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 800;
             letter-spacing: 0.5px;
-            color: #ffffff;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
         }
+        .unlock-icon-btn:hover {
+            background: #2c2c2c;
+            color: #ffffff;
+            border-color: #2c2c2c;
+        }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 900;
+            background: linear-gradient(45deg, #ff007f, #7928ca, #0070f3, #00dfd8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            letter-spacing: 0.5px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+            animation: rainbowText 6s linear infinite;
+        }
+
         .links-list {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
+            overflow-y: auto;
+            padding-right: 4px;
         }
+        .links-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .links-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+        }
+
         .link-row {
             display: flex;
             align-items: center;
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.25);
             border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
             overflow: hidden;
+            flex-shrink: 0;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .link-row:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.4);
+            border-color: rgba(255, 255, 255, 0.8);
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
+        
         .link-item {
             flex-grow: 1;
-            color: #ffffff;
+            color: #1f1f1f; 
             text-decoration: none;
-            padding: 14px 18px;
+            padding: 12px 16px;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 800;
             word-break: break-all;
-            transition: color 0.2s;
+            letter-spacing: 0.3px;
         }
         .link-item:hover {
-            color: #ffd369;
+            color: #7928ca;
         }
+
         .copy-btn {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.35);
             border: none;
-            color: #fff;
-            padding: 14px 18px;
+            color: #1a1a1a;
+            padding: 12px 18px;
             cursor: pointer;
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            border-left: 1.5px solid rgba(255, 255, 255, 0.4);
             transition: all 0.2s ease;
-            border-left: 1px solid rgba(255, 255, 255, 0.15);
         }
         .copy-btn:hover {
-            background: #ffd369;
-            color: #1a1a1a;
+            background: #2c2c2c;
+            color: #ffffff;
+        }
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>✨ Website Links ✨</h1>
-        <div class="links-list" id="linkList">
-            <div class="link-row">
-                <a href="http://cd.chidoi.gt.tc" class="link-item" target="_blank">cd.chidoi.gt.tc</a>
-                <button class="copy-btn" onclick="copyLink('https://cd.chidoi.gt.tc', this)">Copy</button>
-            </div>
-            <div class="link-row">
-                <a href="http://stt.ilove.gt.tc" class="link-item" target="_blank">stt.ilove.gt.tc</a>
-                <button class="copy-btn" onclick="copyLink('https://stt.ilove.gt.tc', this)">Copy</button>
-            </div>
-            <div class="link-row">
-                <a href="http://server.arcanedungeon.gt.tc" class="link-item" target="_blank">server.arcanedungeon.gt.tc</a>
-                <button class="copy-btn" onclick="copyLink('https://server.arcanedungeon.gt.tc', this)">Copy</button>
-            </div>
-            <div class="link-row">
-                <a href="http://pre.a1s.gt.tc" class="link-item" target="_blank">pre.a1s.gt.tc</a>
-                <button class="copy-btn" onclick="copyLink('https://pre.a1s.gt.tc', this)">Copy</button>
-            </div>
-            <div class="link-row">
-                <a href="http://st.canhan.gt.tc" class="link-item" target="_blank">st.canhan.gt.tc</a>
-                <button class="copy-btn" onclick="copyLink('https://st.canhan.gt.tc', this)">Copy</button>
-            </div>
-            <div class="link-row">
-                <a href="http://khanh.canhan.gt.tc" class="link-item" target="_blank">khanh.canhan.gt.tc</a>
-                <button class="copy-btn" onclick="copyLink('https://khanh.canhan.gt.tc', this)">Copy</button>
-            </div>
-            <div class="link-row">
-                <a href="http://love.ilove.gt.tc" class="link-item" target="_blank">love.ilove.gt.tc</a>
-                <button class="copy-btn" onclick="copyLink('https://love.ilove.gt.tc', this)">Copy</button>
-            </div>
-            <div class="link-row">
-                <a href="http://download.chidoi.gt.tc" class="link-item" target="_blank">download.chidoi.gt.tc</a>
-                <button class="copy-btn" onclick="copyLink('https://download.chidoi.gt.tc', this)">Copy</button>
-            </div>
-            <div class="link-row">
-                <a href="http://dich.dich-all.gt.tc" class="link-item" target="_blank">dich.dich-all.gt.tc</a>
-                <button class="copy-btn" onclick="copyLink('https://dich.dich-all.gt.tc', this)">Copy</button>
-            </div>
-            <div class="link-row">
-                <a href="http://dich.stt.gt.tc" class="link-item" target="_blank">dich.stt.gt.tc</a>
-                <button class="copy-btn" onclick="copyLink('https://dich.stt.gt.tc', this)">Copy</button>
-            </div>
-            <div class="link-row">
-                <a href="http://gd.giadinh.gt.tc" class="link-item" target="_blank">gd.giadinh.gt.tc</a>
-                <button class="copy-btn" onclick="copyLink('https://gd.giadinh.gt.tc', this)">Copy</button>
+    <!-- Màn hình chờ đếm ngược khi nhập sai quá 5 lần -->
+    <div class="lockout-screen" id="lockoutScreen">
+        <div class="lockout-box">
+            <h2>⚠️ Tạm khóa truy cập</h2>
+            <p>Bạn đã nhập sai mật khẩu quá 5 lần. Vui lòng chờ hết thời gian để thử lại.</p>
+            <div class="countdown-timer" id="countdownTimer">01:00</div>
+        </div>
+    </div>
+
+    <!-- Modal Nhập Mật Khẩu -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal-box">
+            <h3>Nhập mật khẩu</h3>
+            <input type="password" id="passInput" placeholder="Mật khẩu..." onkeydown="if(event.key === 'Enter') checkPassword()">
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="toggleModal(false)">Hủy</button>
+                <button class="btn-submit" onclick="checkPassword()">Xác nhận</button>
             </div>
         </div>
     </div>
 
+    <!-- Hộp Thông Báo Tùy Chỉnh -->
+    <div class="custom-alert-overlay" id="customAlert">
+        <div class="custom-alert-box">
+            <h4>Thông báo</h4>
+            <p id="alertMessage">Sai mật khẩu!</p>
+            <button onclick="closeCustomAlert()">OK</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header-section">
+            <button class="unlock-icon-btn" onclick="handleUnlockClick()">🔒 Khóa</button>
+            <h1 id="pageTitle">✨ Website Links ✨</h1>
+        </div>
+
+        <div class="links-list" id="linkList">
+            <!-- Link công khai -->
+            <div class="link-row"><a href="https://cd.chidoi.gt.tc" class="link-item" target="_blank">cd.chidoi.gt.tc</a><button class="copy-btn" onclick="copyLink('https://cd.chidoi.gt.tc', this)">Copy</button></div>
+            <div class="link-row"><a href="https://server.veloranetwork.gt.tc" class="link-item" target="_blank">server.veloranetwork.gt.tc</a><button class="copy-btn" onclick="copyLink('https://server.veloranetwork.gt.tc', this)">Copy</button></div>
+            <div class="link-row"><a href="https://anh.anh.gt.tc" class="link-item" target="_blank">anh.anh.gt.tc</a><button class="copy-btn" onclick="copyLink('https://anh.anh.gt.tc', this)">Copy</button></div>
+            <div class="link-row"><a href="https://st.canhan.gt.tc" class="link-item" target="_blank">st.canhan.gt.tc</a><button class="copy-btn" onclick="copyLink('https://st.canhan.gt.tc', this)">Copy</button></div>
+            <div class="link-row"><a href="https://download.chidoi.gt.tc" class="link-item" target="_blank">download.chidoi.gt.tc</a><button class="copy-btn" onclick="copyLink('https://download.chidoi.gt.tc', this)">Copy</button></div>
+            <div class="link-row"><a href="https://dh.anh.gt.tc" class="link-item" target="_blank">dh.anh.gt.tc</a><button class="copy-btn" onclick="copyLink('https://dh.anh.gt.tc', this)">Copy</button></div>
+            <div class="link-row"><a href="https://sta.all.infy.click" class="link-item" target="_blank">sta.all.infy.click</a><button class="copy-btn" onclick="copyLink('https://sta.all.infy.click', this)">Copy</button></div>
+            <div class="link-row"><a href="https://dich.dich-all.gt.tc" class="link-item" target="_blank">dich.dich-all.gt.tc</a><button class="copy-btn" onclick="copyLink('https://dich.dich-all.gt.tc', this)">Copy</button></div>
+            <div class="link-row"><a href="https://dich.stt.gt.tc" class="link-item" target="_blank">dich.stt.gt.tc</a><button class="copy-btn" onclick="copyLink('https://dich.stt.gt.tc', this)">Copy</button></div>
+            <div class="link-row"><a href="https://gd.giadinh.gt.tc" class="link-item" target="_blank">gd.giadinh.gt.tc</a><button class="copy-btn" onclick="copyLink('https://gd.giadinh.gt.tc', this)">Copy</button></div>
+
+            <!-- Link ẩn -->
+            <div class="link-row hidden secret"><a href="https://yeu.ilove.gt.tc" class="link-item" target="_blank">yeu.ilove.gt.tc</a><button class="copy-btn" onclick="copyLink('https://yeu.ilove.gt.tc', this)">Copy</button></div>
+            <div class="link-row hidden secret"><a href="https://pre.a1s.gt.tc" class="link-item" target="_blank">pre.a1s.gt.tc</a><button class="copy-btn" onclick="copyLink('https://pre.a1s.gt.tc', this)">Copy</button></div>
+            <div class="link-row hidden secret"><a href="https://khanh.canhan.gt.tc" class="link-item" target="_blank">khanh.canhan.gt.tc</a><button class="copy-btn" onclick="copyLink('https://khanh.canhan.gt.tc', this)">Copy</button></div>
+            <div class="link-row hidden secret"><a href="https://love.ilove.gt.tc" class="link-item" target="_blank">love.ilove.gt.tc</a><button class="copy-btn" onclick="copyLink('https://love.ilove.gt.tc', this)">Copy</button></div>
+        </div>
+    </div>
+
     <script>
+        let isUnlocked = false;
+        let wrongAttempts = parseInt(localStorage.getItem("wrongAttempts")) || 0;
+        let countdownInterval = null;
+
+        window.addEventListener("DOMContentLoaded", () => {
+            checkLockoutStatus();
+        });
+
+        function checkLockoutStatus() {
+            const lockoutUntil = localStorage.getItem("lockoutUntil");
+            if (lockoutUntil) {
+                const now = Date.now();
+                const remainingTime = parseInt(lockoutUntil) - now;
+
+                if (remainingTime > 0) {
+                    startCountdown(remainingTime);
+                } else {
+                    localStorage.removeItem("lockoutUntil");
+                    localStorage.setItem("wrongAttempts", "0");
+                    wrongAttempts = 0;
+                    document.getElementById("lockoutScreen").classList.remove("active");
+                }
+            }
+        }
+
+        function startCountdown(durationMs) {
+            const lockoutScreen = document.getElementById("lockoutScreen");
+            const timerElement = document.getElementById("countdownTimer");
+            lockoutScreen.classList.add("active");
+
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            const targetTime = Date.now() + durationMs;
+
+            countdownInterval = setInterval(() => {
+                const now = Date.now();
+                const timeLeftMs = targetTime - now;
+                let timeLeft = Math.ceil(timeLeftMs / 1000);
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    localStorage.removeItem("lockoutUntil");
+                    localStorage.setItem("wrongAttempts", "0");
+                    wrongAttempts = 0;
+                    lockoutScreen.classList.remove("active");
+                } else {
+                    let minutes = Math.floor(timeLeft / 60);
+                    let seconds = timeLeft % 60;
+                    timerElement.innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }, 200);
+        }
+
+        function handleUnlockClick() {
+            if (isUnlocked) {
+                lockSystem();
+            } else {
+                toggleModal(true);
+            }
+        }
+
+        function toggleModal(show) {
+            const modal = document.getElementById("passwordModal");
+            if (show) {
+                modal.classList.add("active");
+                document.getElementById("passInput").focus();
+            } else {
+                modal.classList.remove("active");
+                document.getElementById("passInput").value = "";
+            }
+        }
+
+        function showAlert(message) {
+            document.getElementById("alertMessage").innerText = message;
+            document.getElementById("customAlert").classList.add("active");
+        }
+
+        function closeCustomAlert() {
+            document.getElementById("customAlert").classList.remove("active");
+            document.getElementById("passInput").value = "";
+            document.getElementById("passInput").focus();
+        }
+
+        function checkPassword() {
+            const password = document.getElementById("passInput").value;
+            if (password === "1032012") {
+                isUnlocked = true;
+                wrongAttempts = 0;
+                localStorage.setItem("wrongAttempts", "0");
+                localStorage.removeItem("lockoutUntil");
+                const secrets = document.querySelectorAll(".secret");
+                secrets.forEach(el => el.classList.remove("hidden"));
+                
+                document.getElementById("pageTitle").innerText = "✨ Website Links [ Đã mở khóa ] ✨";
+
+                const btn = document.querySelector(".unlock-icon-btn");
+                btn.innerText = "🔓 Mở";
+                btn.style.background = "rgba(255, 255, 255, 0.5)";
+                toggleModal(false);
+
+                const linkList = document.getElementById("linkList");
+                setTimeout(() => {
+              linkList.scrollTo({ top: linkList.scrollHeight, behavior: 'smooth' });
+                }, 100);
+            } else {
+                wrongAttempts++;
+                localStorage.setItem("wrongAttempts", wrongAttempts);
+                toggleModal(false);
+
+                if (wrongAttempts >= 10) {
+                    const lockoutTime = Date.now() + 60000; // 60 giây tiếp tục
+                    localStorage.setItem("lockoutUntil", lockoutTime);
+                    startCountdown(60000);
+                } else {
+                    showAlert(`Sai mật khẩu! Còn lại ${10 - wrongAttempts} lần thử.`);
+                }
+            }
+        }
+
+        function lockSystem() {
+            isUnlocked = false;
+            const secrets = document.querySelectorAll(".secret");
+            secrets.forEach(el => el.classList.add("hidden"));
+
+            document.getElementById("pageTitle").innerText = "✨ Website Links ✨";
+
+            const btn = document.querySelector(".unlock-icon-btn");
+            btn.innerText = "🔒 Khóa";
+            btn.style.background = "rgba(255, 255, 255, 0.35)";
+
+            const linkList = document.getElementById("linkList");
+            linkList.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         function copyLink(text, button) {
             navigator.clipboard.writeText(text).then(() => {
                 let originalText = button.innerText;
                 button.innerText = "Đã copy!";
-                button.style.background = "#228B22";
-                button.style.color = "#fff";
+                button.style.background = "#2cbody2c2c";
+                button.style.color = "#ffffff";
                 setTimeout(() => {
                     button.innerText = originalText;
                     button.style.background = "";
@@ -160,7 +576,5 @@
             });
         }
     </script>
-
 </body>
-</html>
-
+</html>   
